@@ -1,6 +1,7 @@
 package net.rhari.ecomm.products;
 
-import net.rhari.ecomm.data.model.Product;
+import net.rhari.ecomm.data.model.RankingInfo;
+import net.rhari.ecomm.data.model.SortedProduct;
 import net.rhari.ecomm.util.ListState;
 
 import java.util.List;
@@ -8,11 +9,17 @@ import java.util.List;
 class ProductsState implements ProductsContract.State {
 
     private final int categoryId;
-    private final List<Product> products;
+    private RankingInfo currentSortOrder;
+    private final List<RankingInfo> sortOrderOptions;
+    private final List<SortedProduct> products;
     private final ListState productsListState;
 
-    ProductsState(int categoryId, List<Product> products, ListState productsListState) {
+    ProductsState(int categoryId, RankingInfo currentSortOrder,
+                  List<RankingInfo> sortOrderOptions, List<SortedProduct> products,
+                  ListState productsListState) {
         this.categoryId = categoryId;
+        this.currentSortOrder = currentSortOrder;
+        this.sortOrderOptions = sortOrderOptions;
         this.products = products;
         this.productsListState = productsListState;
     }
@@ -22,8 +29,16 @@ class ProductsState implements ProductsContract.State {
         return categoryId;
     }
 
+    public RankingInfo getCurrentSortOrder() {
+        return currentSortOrder;
+    }
+
+    public List<RankingInfo> getSortOrderOptions() {
+        return sortOrderOptions;
+    }
+
     @Override
-    public List<Product> getProducts() {
+    public List<SortedProduct> getProducts() {
         return products;
     }
 

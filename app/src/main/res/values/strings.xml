@@ -6,4 +6,5 @@
     <string name="action_retry">Retry</string>
 
     <string name="hifen">-</string>
+    <string name="menu_item_sort_order">Sort order</string>
 </resources>

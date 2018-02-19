@@ -3,6 +3,8 @@ package net.rhari.ecomm.data.remote;
 import net.rhari.ecomm.data.model.ApiResponse;
 import net.rhari.ecomm.data.model.Category;
 import net.rhari.ecomm.data.model.Product;
+import net.rhari.ecomm.data.model.RankingInfo;
+import net.rhari.ecomm.data.model.RankingValue;
 import net.rhari.ecomm.data.model.Tax;
 
 import org.json.JSONArray;
@@ -11,6 +13,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -37,7 +40,9 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
             JSONObject rootJson = new JSONObject(value.string());
             List<Category> categories = parseCategories(rootJson);
             List<Product> products = parseProducts(rootJson);
-            return new ApiResponse(categories, products, null, null, null);
+            List<RankingInfo> rankingInfo = parseRankingInfo(rootJson);
+            List<RankingValue> rankingValues = parseRankingValues(rootJson);
+            return new ApiResponse(categories, products, null, rankingInfo, rankingValues);
         } catch (JSONException je) {
             Timber.e("Could not parse server response", je);
             return null;
@@ -102,5 +107,64 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
         }
 
         return products;
+    }
+
+    private List<RankingInfo> parseRankingInfo(JSONObject rootJson) throws JSONException {
+        List<RankingInfo> rankingInfo = new ArrayList<>();
+        JSONArray rankingsJson = rootJson.getJSONArray("rankings");
+
+        int rankingId = 1;
+        for (int i = 0;i < rankingsJson.length();i++) {
+            JSONObject rankingJson = rankingsJson.getJSONObject(i);
+            String description = rankingJson.getString("ranking");
+            Iterator<String> keys = rankingJson.getJSONArray("products").getJSONObject(0).keys();
+            String metricName = null;
+            while (keys.hasNext()) {
+                String key = keys.next();
+                if (key.equals("view_count")) {
+                    metricName = "views";
+                } else if (key.equals("order_count")) {
+                    metricName = "orders";
+                } else if (key.equals("shares")) {
+                    metricName = "shares";
+                }
+            }
+            RankingInfo info = new RankingInfo(rankingId, description, metricName);
+            rankingInfo.add(info);
+            rankingId++;
+        }
+
+        return rankingInfo;
+    }
+
+    private List<RankingValue> parseRankingValues(JSONObject rootJson) throws JSONException {
+        List<RankingValue> rankingValues = new ArrayList<>();
+        JSONArray rankingsJson = rootJson.getJSONArray("rankings");
+
+        int rankingId = 1;
+        for (int i = 0;i < rankingsJson.length();i++) {
+            JSONObject rankingJson = rankingsJson.getJSONObject(i);
+            JSONArray productsJson = rankingJson.getJSONArray("products");
+
+            for (int j = 0;j < productsJson.length();j++) {
+                JSONObject productJson = productsJson.getJSONObject(j);
+                int productId = 0;
+                int value = 0;
+                Iterator<String> keys = productJson.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    if (key.equals("id")) {
+                        productId = productJson.getInt(key);
+                    } else {
+                        value = productJson.getInt(key);
+                    }
+                }
+                RankingValue rankingValue = new RankingValue(rankingId, productId, value);
+                rankingValues.add(rankingValue);
+            }
+            rankingId++;
+        }
+
+        return rankingValues;
     }
 }

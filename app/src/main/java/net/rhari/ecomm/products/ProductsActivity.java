@@ -9,11 +9,17 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 
 import net.rhari.ecomm.R;
-import net.rhari.ecomm.data.model.Product;
+import net.rhari.ecomm.data.model.RankingInfo;
+import net.rhari.ecomm.data.model.SortedProduct;
 import net.rhari.ecomm.di.ActivityScoped;
 import net.rhari.ecomm.util.ListState;
 import net.rhari.ecomm.util.RecyclerViewState;
@@ -31,11 +37,13 @@ import dagger.android.support.DaggerAppCompatActivity;
 
 @ActivityScoped
 public class ProductsActivity extends DaggerAppCompatActivity implements ProductsContract.View,
-        ProductsAdapter.OnListItemClickListener {
+        ProductsAdapter.OnListItemClickListener, Spinner.OnItemSelectedListener {
 
     public static final String EXTRA_CATEGORY_ID = "category_id";
 
     private static final String BUNDLE_ARGUMENT_CATEGORY_ID = "category_id";
+    private static final String BUNDLE_ARGUMENT_CURRENT_SORT_ORDER = "current_sort_order";
+    private static final String BUNDLE_ARGUMENT_SORT_ORDER_OPTIONS = "sort_order_options";
     private static final String BUNDLE_ARGUMENT_PRODUCTS = "products";
     private static final String BUNDLE_ARGUMENT_PRODUCT_LIST_STATE = "product_list_state";
 
@@ -48,13 +56,15 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     @Inject
     ProductsContract.Presenter presenter;
 
-    private ProductsAdapter adapter;
+    private ProductsAdapter productsAdapter;
+    private ArrayAdapter<RankingInfo> sortOrderAdapter;
     private Snackbar errorView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recycler_list);
+        sortOrderAdapter = new ArrayAdapter<>(this, R.layout.layout_sort_order_row);
     }
 
     @Override
@@ -73,14 +83,31 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.products_page_options, menu);
+        MenuItem item = menu.findItem(R.id.sort_order);
+        Spinner spinner = (Spinner) item.getActionView();
+        spinner.setAdapter(sortOrderAdapter);
+        spinner.setOnItemSelectedListener(this);
+        return true;
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
     }
 
     @Override
-    public void updateProductsList(List<Product> products) {
-        adapter.swapData(products);
+    public void updateSortOrderOptions(List<RankingInfo> sortOrderOptions) {
+        sortOrderAdapter.clear();
+        sortOrderAdapter.addAll(sortOrderOptions);
+        sortOrderAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void updateProductsList(List<SortedProduct> products, RankingInfo sortOrder) {
+        productsAdapter.swapData(products, sortOrder.getMetricName());
     }
 
     @Override
@@ -89,7 +116,18 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     }
 
     @Override
-    public void onListItemClick(Product product, int position) {
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        RankingInfo newOrder = sortOrderAdapter.getItem(position);
+        presenter.onSortOrderChange(newOrder);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
+    }
+
+    @Override
+    public void onListItemClick(SortedProduct product, int position) {
         presenter.onListItemClick(product, position);
     }
 
@@ -154,9 +192,9 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
                 LinearLayoutManager.VERTICAL, false);
         productsListView.setLayoutManager(layoutManager);
         productsListView.setHasFixedSize(true);
-        adapter = new ProductsAdapter(new ArrayList<>(0));
-        adapter.setOnClickListener(this);
-        productsListView.setAdapter(adapter);
+        productsAdapter = new ProductsAdapter(new ArrayList<>(0));
+        productsAdapter.setOnClickListener(this);
+        productsListView.setAdapter(productsAdapter);
     }
 
     private void subscribeToPresenter(Bundle savedInstanceState) {
@@ -174,6 +212,10 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     private void writeStateToBundle(Bundle savedInstanceState) {
         ProductsContract.State state = presenter.getState();
         savedInstanceState.putInt(BUNDLE_ARGUMENT_CATEGORY_ID, state.getCategoryId());
+        Parcelable currentSortOrderState = Parcels.wrap(state.getCurrentSortOrder());
+        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_CURRENT_SORT_ORDER, currentSortOrderState);
+        Parcelable sortOrderOptionsState = Parcels.wrap(state.getSortOrderOptions());
+        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_SORT_ORDER_OPTIONS, sortOrderOptionsState);
         Parcelable productsState = Parcels.wrap(state.getProducts());
         savedInstanceState.putParcelable(BUNDLE_ARGUMENT_PRODUCTS, productsState);
         Parcelable productsListState = productsListView.getLayoutManager().onSaveInstanceState();
@@ -190,7 +232,17 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
             categoryId =
                     Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_CATEGORY_ID));
         }
-        List<Product> products = null;
+        RankingInfo currentSortOrder = null;
+        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CURRENT_SORT_ORDER)) {
+            currentSortOrder = Parcels.unwrap(savedInstanceState
+                    .getParcelable(BUNDLE_ARGUMENT_CURRENT_SORT_ORDER));
+        }
+        List<RankingInfo> sortOrderOptions = null;
+        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_SORT_ORDER_OPTIONS)) {
+            sortOrderOptions = Parcels.unwrap(savedInstanceState
+                    .getParcelable(BUNDLE_ARGUMENT_SORT_ORDER_OPTIONS));
+        }
+        List<SortedProduct> products = null;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PRODUCTS)) {
             products = Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PRODUCTS));
         }
@@ -198,6 +250,8 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PRODUCT_LIST_STATE)) {
             productsListState = savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PRODUCT_LIST_STATE);
         }
-        return new ProductsState(categoryId, products, new RecyclerViewState(productsListState));
+        return new ProductsState(categoryId, currentSortOrder, sortOrderOptions, products, new
+                RecyclerViewState
+                (productsListState));
     }
 }

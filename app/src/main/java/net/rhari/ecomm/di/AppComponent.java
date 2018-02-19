@@ -7,6 +7,8 @@ import net.rhari.ecomm.data.repository.CategoryRepository;
 import net.rhari.ecomm.data.repository.CategoryRepositoryModule;
 import net.rhari.ecomm.data.repository.ProductRepository;
 import net.rhari.ecomm.data.repository.ProductRepositoryModule;
+import net.rhari.ecomm.data.repository.RankingRepository;
+import net.rhari.ecomm.data.repository.RankingRepositoryModule;
 import net.rhari.ecomm.util.NetworkHelperModule;
 
 import javax.inject.Singleton;
@@ -20,6 +22,7 @@ import dagger.android.support.AndroidSupportInjectionModule;
 @Component(modules = {NetworkHelperModule.class,
         CategoryRepositoryModule.class,
         ProductRepositoryModule.class,
+        RankingRepositoryModule.class,
         ApplicationModule.class,
         ActivityBindingModule.class,
         AndroidSupportInjectionModule.class})
@@ -28,6 +31,8 @@ public interface AppComponent extends AndroidInjector<ECommApplication> {
     CategoryRepository getCategoryRepository();
 
     ProductRepository getProductRepository();
+
+    RankingRepository getRankingRepository();
 
     @Component.Builder
     interface Builder {

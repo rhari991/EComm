@@ -3,7 +3,6 @@ package net.rhari.ecomm.data.model;
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Embedded;
 import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
 import org.parceler.Parcel;
@@ -25,12 +24,6 @@ public class Product {
 
     @Embedded
     private final Tax tax;
-
-    @Ignore
-    private int minPrice;
-
-    @Ignore
-    private int maxPrice;
 
     @ParcelConstructor
     public Product(int id, String name, int categoryId, Tax tax) {
@@ -54,21 +47,5 @@ public class Product {
 
     public Tax getTax() {
         return tax;
-    }
-
-    public int getMinPrice() {
-        return minPrice;
-    }
-
-    public void setMinPrice(int minPrice) {
-        this.minPrice = minPrice;
-    }
-
-    public int getMaxPrice() {
-        return maxPrice;
-    }
-
-    public void setMaxPrice(int maxPrice) {
-        this.maxPrice = maxPrice;
     }
 }

@@ -12,10 +12,10 @@ import dagger.android.ContributesAndroidInjector;
 abstract class ActivityBindingModule {
 
     @ActivityScoped
-    @ContributesAndroidInjector(modules = {CategoriesModule.class, ProductsModule.class})
+    @ContributesAndroidInjector(modules = {CategoriesModule.class})
     abstract CategoriesActivity categoriesActivity();
 
     @ActivityScoped
-    @ContributesAndroidInjector(modules = ProductsModule.class)
+    @ContributesAndroidInjector(modules = {ProductsModule.class})
     abstract ProductsActivity productsActivity();
 }

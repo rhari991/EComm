@@ -1,7 +1,8 @@
 package net.rhari.ecomm.products;
 
-import net.rhari.ecomm.data.model.Product;
-import net.rhari.ecomm.data.repository.ProductRepository;
+import net.rhari.ecomm.data.model.RankingInfo;
+import net.rhari.ecomm.data.model.SortedProduct;
+import net.rhari.ecomm.data.repository.RankingRepository;
 import net.rhari.ecomm.di.ActivityScoped;
 import net.rhari.ecomm.util.NetworkHelper;
 
@@ -18,20 +19,21 @@ import io.reactivex.disposables.Disposable;
 class ProductsPresenter implements ProductsContract.Presenter,
         NetworkHelper.OnNetworkStateChangeListener {
 
-    private final ProductRepository productRepository;
-    private final NetworkHelper networkHelper;
+    private final RankingRepository rankingRepository;
 
     private ProductsContract.View view;
 
     private int categoryId;
-    private final List<Product> products;
+    private RankingInfo currentSortOrder;
+    private final List<RankingInfo> sortOrderOptions;
+    private final List<SortedProduct> products;
     private final CompositeDisposable disposables;
 
     @Inject
-    ProductsPresenter(ProductRepository productRepository, NetworkHelper networkHelper) {
-        this.productRepository = productRepository;
-        this.networkHelper = networkHelper;
+    ProductsPresenter(RankingRepository rankingRepository) {
+        this.rankingRepository = rankingRepository;
 
+        this.sortOrderOptions = new ArrayList<>(0);
         this.products = new ArrayList<>(0);
         this.disposables = new CompositeDisposable();
     }
@@ -40,7 +42,6 @@ class ProductsPresenter implements ProductsContract.Presenter,
     public void subscribe(ProductsContract.View view, ProductsContract.State state) {
         this.view = view;
 
-        networkHelper.addNetworkStateChangeListener(this);
         products.clear();
         if (state != null) {
             loadState(state);
@@ -54,8 +55,14 @@ class ProductsPresenter implements ProductsContract.Presenter,
     }
 
     @Override
-    public void onListItemClick(Product product, int position) {
-        view.goToVariantsPage(product.getId());
+    public void onSortOrderChange(RankingInfo newOrder) {
+        currentSortOrder = newOrder;
+        reloadSortedProducts();
+    }
+
+    @Override
+    public void onListItemClick(SortedProduct product, int position) {
+        view.goToVariantsPage(product.getProduct().getId());
     }
 
     @Override
@@ -72,25 +79,40 @@ class ProductsPresenter implements ProductsContract.Presenter,
 
     @Override
     public ProductsContract.State getState() {
-        return new ProductsState(categoryId, products, null);
+        return new ProductsState(categoryId, currentSortOrder, sortOrderOptions, products, null);
     }
 
     @Override
     public void unsubscribe() {
         view = null;
         disposables.clear();
-        networkHelper.removeNetworkStateChangeListener(this);
     }
 
     private void reload() {
         view.hideErrorMessage();
-        if (!networkHelper.isConnected()) {
-            view.showErrorMessage(networkHelper.getNetworkUnavailableString());
-            view.hideLoadingContentIndicator();
-            return;
-        }
         view.showLoadingContentIndicator();
-        Disposable disposable = productRepository.getProducts(categoryId)
+        Disposable disposable = rankingRepository.getAllRankingInfo()
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(throwable -> view.showErrorMessage(null))
+                .subscribe(this::processSortOrderOptions);
+        disposables.add(disposable);
+    }
+
+    private void processSortOrderOptions(List<RankingInfo> sortOrderOptions) {
+        saveAndShowSortOrderOptions(sortOrderOptions);
+        currentSortOrder = sortOrderOptions.get(0);
+        reloadSortedProducts();
+    }
+
+    private void saveAndShowSortOrderOptions(List<RankingInfo> sortOrderOptions) {
+        this.sortOrderOptions.clear();
+        this.sortOrderOptions.addAll(sortOrderOptions);
+        view.updateSortOrderOptions(sortOrderOptions);
+    }
+
+    private void reloadSortedProducts() {
+        Disposable disposable = rankingRepository.getSortedProducts(currentSortOrder.getId(),
+                categoryId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(throwable -> view.showErrorMessage(null))
                 .subscribe(this::saveAndShowProducts);
@@ -99,14 +121,16 @@ class ProductsPresenter implements ProductsContract.Presenter,
 
     private void loadState(ProductsContract.State state) {
         categoryId = state.getCategoryId();
+        currentSortOrder = state.getCurrentSortOrder();
+        saveAndShowSortOrderOptions(state.getSortOrderOptions());
         saveAndShowProducts(state.getProducts());
         view.restoreListState(state.getProductsListState());
     }
 
-    private void saveAndShowProducts(List<Product> products) {
+    private void saveAndShowProducts(List<SortedProduct> products) {
         this.products.clear();
         this.products.addAll(products);
-        view.updateProductsList(products);
+        view.updateProductsList(products, currentSortOrder);
         view.hideLoadingContentIndicator();
     }
 }

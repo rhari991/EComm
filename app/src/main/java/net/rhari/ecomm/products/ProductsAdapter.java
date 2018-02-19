@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import net.rhari.ecomm.R;
-import net.rhari.ecomm.data.model.Product;
+import net.rhari.ecomm.data.model.SortedProduct;
 
 import java.util.List;
 
@@ -16,10 +16,11 @@ import butterknife.ButterKnife;
 
 public class ProductsAdapter extends RecyclerView.Adapter<ProductsAdapter.ProductViewHolder> {
 
-    private List<Product> products;
+    private List<SortedProduct> products;
+    private String metricName;
     private OnListItemClickListener clickListener;
 
-    ProductsAdapter(List<Product> products) {
+    ProductsAdapter(List<SortedProduct> products) {
         this.products = products;
     }
 
@@ -27,9 +28,10 @@ public class ProductsAdapter extends RecyclerView.Adapter<ProductsAdapter.Produc
         this.clickListener = clickListener;
     }
 
-    void swapData(List<Product> products) {
+    void swapData(List<SortedProduct> products, String metricName) {
         this.products.clear();
         this.products.addAll(products);
+        this.metricName = metricName;
         notifyDataSetChanged();
     }
 
@@ -43,7 +45,7 @@ public class ProductsAdapter extends RecyclerView.Adapter<ProductsAdapter.Produc
 
     @Override
     public void onBindViewHolder(ProductViewHolder holder, int position) {
-        Product product = products.get(position);
+        SortedProduct product = products.get(position);
         holder.bind(product);
     }
 
@@ -66,9 +68,9 @@ public class ProductsAdapter extends RecyclerView.Adapter<ProductsAdapter.Produc
             view.setOnClickListener(this);
         }
 
-        void bind(Product product) {
-            nameView.setText(product.getName());
-            //metricView.setText("ss");
+        void bind(SortedProduct product) {
+            nameView.setText(product.getProduct().getName());
+            metricView.setText(product.getRankingValue().getValue() + " " + metricName);
         }
 
         @Override
@@ -82,6 +84,6 @@ public class ProductsAdapter extends RecyclerView.Adapter<ProductsAdapter.Produc
 
     public interface OnListItemClickListener {
 
-        void onListItemClick(Product product, int position);
+        void onListItemClick(SortedProduct product, int position);
     }
 }

@@ -4,6 +4,7 @@ import net.rhari.ecomm.data.Local;
 import net.rhari.ecomm.data.Remote;
 import net.rhari.ecomm.data.local.CategoryDao;
 import net.rhari.ecomm.data.local.ProductDao;
+import net.rhari.ecomm.data.local.RankingDao;
 import net.rhari.ecomm.data.model.Category;
 import net.rhari.ecomm.data.remote.RemoteDataSource;
 
@@ -21,14 +22,17 @@ public class CategoryRepository {
     private final RemoteDataSource remoteDataSource;
     private final CategoryDao categoryDao;
     private final ProductDao productDao;
+    private final RankingDao rankingDao;
 
     @Inject
     CategoryRepository(@Remote RemoteDataSource remoteDataSource,
                        @Local CategoryDao categoryDao,
-                       @Local ProductDao productDao) {
+                       @Local ProductDao productDao,
+                       @Local RankingDao rankingDao) {
         this.remoteDataSource = remoteDataSource;
         this.categoryDao = categoryDao;
         this.productDao = productDao;
+        this.rankingDao = rankingDao;
     }
 
     public Flowable<List<Category>> getTopLevelCategories() {
@@ -36,6 +40,8 @@ public class CategoryRepository {
                         .doOnNext(apiResponse -> {
                             categoryDao.insertCategories(apiResponse.getCategories());
                             productDao.insertProducts(apiResponse.getProducts());
+                            rankingDao.insertRankingInfo(apiResponse.getRankingInfo());
+                            rankingDao.insertRankingValues(apiResponse.getRankingValues());
                         })
                         .flatMap(apiResponse -> getLocalTopLevelCategories())
                         .subscribeOn(Schedulers.io());
