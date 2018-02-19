@@ -3,6 +3,7 @@ package net.rhari.ecomm.data.repository;
 import net.rhari.ecomm.data.Local;
 import net.rhari.ecomm.data.Remote;
 import net.rhari.ecomm.data.local.CategoryDao;
+import net.rhari.ecomm.data.local.ProductDao;
 import net.rhari.ecomm.data.model.Category;
 import net.rhari.ecomm.data.remote.RemoteDataSource;
 
@@ -18,19 +19,25 @@ import io.reactivex.schedulers.Schedulers;
 public class CategoryRepository {
 
     private final RemoteDataSource remoteDataSource;
-    private final CategoryDao dao;
+    private final CategoryDao categoryDao;
+    private final ProductDao productDao;
 
     @Inject
-    CategoryRepository(@Remote RemoteDataSource remoteDataSource, @Local CategoryDao dao) {
+    CategoryRepository(@Remote RemoteDataSource remoteDataSource,
+                       @Local CategoryDao categoryDao,
+                       @Local ProductDao productDao) {
         this.remoteDataSource = remoteDataSource;
-        this.dao = dao;
+        this.categoryDao = categoryDao;
+        this.productDao = productDao;
     }
 
     public Flowable<List<Category>> getTopLevelCategories() {
         Flowable<List<Category>> remoteDataObservable = remoteDataSource.getInfo()
-                        .flatMap(apiResponse -> Flowable.just(apiResponse.getCategories()))
-                        .doOnNext(dao::insertCategories)
-                        .flatMap(categories -> getLocalTopLevelCategories())
+                        .doOnNext(apiResponse -> {
+                            categoryDao.insertCategories(apiResponse.getCategories());
+                            productDao.insertProducts(apiResponse.getProducts());
+                        })
+                        .flatMap(apiResponse -> getLocalTopLevelCategories())
                         .subscribeOn(Schedulers.io());
 
         return remoteDataObservable
@@ -39,13 +46,12 @@ public class CategoryRepository {
     }
 
     public Flowable<List<Category>> getChildCategories(int parentCategoryId) {
-        return dao.getChildCategories(parentCategoryId)
-                .filter(categories -> categories.size() > 0)
+        return categoryDao.getChildCategories(parentCategoryId)
                 .subscribeOn(Schedulers.computation());
     }
 
     private Flowable<List<Category>> getLocalTopLevelCategories() {
-        return dao.getTopLevelCategories()
+        return categoryDao.getTopLevelCategories()
                 .filter(categories -> categories.size() > 0)
                 .subscribeOn(Schedulers.computation());
     }

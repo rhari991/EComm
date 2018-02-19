@@ -1,22 +1,20 @@
-package net.rhari.ecomm.categories;
+package net.rhari.ecomm.products;
 
-import net.rhari.ecomm.base.BaseState;
 import net.rhari.ecomm.base.BasePresenter;
+import net.rhari.ecomm.base.BaseState;
 import net.rhari.ecomm.base.BaseView;
-import net.rhari.ecomm.data.model.Category;
+import net.rhari.ecomm.data.model.Product;
 import net.rhari.ecomm.util.ListState;
 
 import java.util.List;
 
-interface CategoriesContract {
+interface ProductsContract {
 
     interface View extends BaseView {
 
-        void updateCategoryList(List<Category> categories);
+        void updateProductsList(List<Product> products);
 
-        void goToChildCategoryPage(int categoryId);
-
-        void goToProductsPage(int categoryId);
+        void goToVariantsPage(int productId);
 
         void showLoadingContentIndicator();
 
@@ -31,18 +29,18 @@ interface CategoriesContract {
 
     interface State extends BaseState {
 
-        int getParentCategoryId();
+        int getCategoryId();
 
-        List<Category> getCategories();
+        List<Product> getProducts();
 
-        ListState getCategoriesListState();
+        ListState getProductsListState();
     }
 
     interface Presenter extends BasePresenter<View, State> {
 
-        void setParentCategoryId(int parentCategoryId);
+        void setCategoryId(int categoryId);
 
-        void onListItemClick(Category category, int position);
+        void onListItemClick(Product product, int position);
 
         void onRetry();
     }

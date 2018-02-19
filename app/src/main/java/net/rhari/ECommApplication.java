@@ -1,6 +1,7 @@
 package net.rhari;
 
 import net.rhari.ecomm.data.repository.CategoryRepository;
+import net.rhari.ecomm.data.repository.ProductRepository;
 import net.rhari.ecomm.di.DaggerAppComponent;
 
 import javax.inject.Inject;
@@ -13,6 +14,9 @@ public class ECommApplication extends DaggerApplication {
 
     @Inject
     CategoryRepository categoryRepository;
+
+    @Inject
+    ProductRepository productRepository;
 
     @Override
     public void onCreate() {
@@ -27,5 +31,9 @@ public class ECommApplication extends DaggerApplication {
 
     public CategoryRepository getCategoryRepository() {
         return categoryRepository;
+    }
+
+    public ProductRepository getProductRepository() {
+        return productRepository;
     }
 }

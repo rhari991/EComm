@@ -2,6 +2,8 @@ package net.rhari.ecomm.data.remote;
 
 import net.rhari.ecomm.data.model.ApiResponse;
 import net.rhari.ecomm.data.model.Category;
+import net.rhari.ecomm.data.model.Product;
+import net.rhari.ecomm.data.model.Tax;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +36,8 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
         try {
             JSONObject rootJson = new JSONObject(value.string());
             List<Category> categories = parseCategories(rootJson);
-            return new ApiResponse(categories, null, null, null, null);
+            List<Product> products = parseProducts(rootJson);
+            return new ApiResponse(categories, products, null, null, null);
         } catch (JSONException je) {
             Timber.e("Could not parse server response", je);
             return null;
@@ -72,5 +75,32 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
         }
 
         return categories;
+    }
+
+    private List<Product> parseProducts(JSONObject rootJson) throws JSONException {
+        List<Product> products = new ArrayList<>();
+        JSONArray categoriesJson = rootJson.getJSONArray("categories");
+
+        for (int i = 0;i < categoriesJson.length();i++) {
+            JSONObject categoryJson = categoriesJson.getJSONObject(i);
+            int categoryId = categoryJson.getInt("id");
+            JSONArray productsJson = categoryJson.getJSONArray("products");
+
+            for (int j = 0;j < productsJson.length();j++) {
+                JSONObject productJson = productsJson.getJSONObject(j);
+
+                int id = productJson.getInt("id");
+                String name = productJson.getString("name");
+                JSONObject taxJson = productJson.getJSONObject("tax");
+                String taxName = taxJson.getString("name");
+                double taxValue = taxJson.getDouble("value");
+                Tax tax = new Tax(taxName, taxValue);
+
+                Product product = new Product(id, name, categoryId, tax);
+                products.add(product);
+            }
+        }
+
+        return products;
     }
 }

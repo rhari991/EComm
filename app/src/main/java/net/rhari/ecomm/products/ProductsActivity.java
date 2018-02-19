@@ -1,4 +1,4 @@
-package net.rhari.ecomm.categories;
+package net.rhari.ecomm.products;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,9 +13,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import net.rhari.ecomm.R;
-import net.rhari.ecomm.data.model.Category;
+import net.rhari.ecomm.data.model.Product;
 import net.rhari.ecomm.di.ActivityScoped;
-import net.rhari.ecomm.products.ProductsActivity;
 import net.rhari.ecomm.util.ListState;
 import net.rhari.ecomm.util.RecyclerViewState;
 
@@ -31,25 +30,25 @@ import butterknife.ButterKnife;
 import dagger.android.support.DaggerAppCompatActivity;
 
 @ActivityScoped
-public class CategoriesActivity extends DaggerAppCompatActivity implements CategoriesContract.View,
-        CategoriesAdapter.OnListItemClickListener {
+public class ProductsActivity extends DaggerAppCompatActivity implements ProductsContract.View,
+        ProductsAdapter.OnListItemClickListener {
 
-    private static final String EXTRA_PARENT_CATEGORY_ID = "parent_category_id";
+    public static final String EXTRA_CATEGORY_ID = "category_id";
 
-    private static final String BUNDLE_ARGUMENT_PARENT_CATEGORY_ID = "parent_category_id";
-    private static final String BUNDLE_ARGUMENT_CATEGORIES = "categories";
-    private static final String BUNDLE_ARGUMENT_CATEGORY_LIST_STATE = "category_list_state";
+    private static final String BUNDLE_ARGUMENT_CATEGORY_ID = "category_id";
+    private static final String BUNDLE_ARGUMENT_PRODUCTS = "products";
+    private static final String BUNDLE_ARGUMENT_PRODUCT_LIST_STATE = "product_list_state";
 
     @BindView(R.id.layout_loading_content)
     LinearLayout loadingContentView;
 
     @BindView(R.id.list_categories)
-    RecyclerView categoriesListView;
+    RecyclerView productsListView;
 
     @Inject
-    CategoriesContract.Presenter presenter;
+    ProductsContract.Presenter presenter;
 
-    private CategoriesAdapter adapter;
+    private ProductsAdapter adapter;
     private Snackbar errorView;
 
     @Override
@@ -63,7 +62,7 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
         super.onResume();
         ButterKnife.bind(this);
         setupToolbar();
-        setupCategoryList();
+        setupProductsList();
         subscribeToPresenter(null);
     }
 
@@ -80,28 +79,18 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
     }
 
     @Override
-    public void updateCategoryList(List<Category> categories) {
-        adapter.swapData(categories);
+    public void updateProductsList(List<Product> products) {
+        adapter.swapData(products);
     }
 
     @Override
-    public void goToChildCategoryPage(int categoryId) {
-        Intent intent = new Intent(this, CategoriesActivity.class);
-        intent.putExtra(EXTRA_PARENT_CATEGORY_ID, categoryId);
-        startActivity(intent);
+    public void goToVariantsPage(int productId) {
+        // TODO
     }
 
     @Override
-    public void goToProductsPage(int categoryId) {
-        Intent intent = new Intent(this, ProductsActivity.class);
-        intent.putExtra(ProductsActivity.EXTRA_CATEGORY_ID, categoryId);
-        startActivity(intent);
-        finish();
-    }
-
-    @Override
-    public void onListItemClick(Category category, int position) {
-        presenter.onListItemClick(category, position);
+    public void onListItemClick(Product product, int position) {
+        presenter.onListItemClick(product, position);
     }
 
     @Override
@@ -118,7 +107,7 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
     public void restoreListState(ListState state) {
         if (state instanceof RecyclerViewState) {
             Parcelable parcelableState = ((RecyclerViewState) state).getListState();
-            categoriesListView.getLayoutManager().onRestoreInstanceState(parcelableState);
+            productsListView.getLayoutManager().onRestoreInstanceState(parcelableState);
         }
     }
 
@@ -127,7 +116,7 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
         if (errorMessage == null) {
             errorMessage = getString(R.string.error_generic);
         }
-        errorView = Snackbar.make(categoriesListView.getRootView(), errorMessage, Snackbar.LENGTH_INDEFINITE)
+        errorView = Snackbar.make(productsListView.getRootView(), errorMessage, Snackbar.LENGTH_INDEFINITE)
                 .setAction(getString(R.string.action_retry), view -> presenter.onRetry());
         errorView.show();
     }
@@ -160,56 +149,55 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
         }
     }
 
-    private void setupCategoryList() {
+    private void setupProductsList() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
-        categoriesListView.setLayoutManager(layoutManager);
-        categoriesListView.setHasFixedSize(true);
-        adapter = new CategoriesAdapter(new ArrayList<>(0));
+        productsListView.setLayoutManager(layoutManager);
+        productsListView.setHasFixedSize(true);
+        adapter = new ProductsAdapter(new ArrayList<>(0));
         adapter.setOnClickListener(this);
-        categoriesListView.setAdapter(adapter);
+        productsListView.setAdapter(adapter);
     }
 
     private void subscribeToPresenter(Bundle savedInstanceState) {
         if (presenter != null) {
             presenter.unsubscribe();
         }
-        CategoriesContract.State state = readStateFromBundle(savedInstanceState);
-        if (state == null && getIntent().hasExtra(EXTRA_PARENT_CATEGORY_ID)) {
-            int parentCategoryId = getIntent().getIntExtra(EXTRA_PARENT_CATEGORY_ID, -1);
-            presenter.setParentCategoryId(parentCategoryId);
+        ProductsContract.State state = readStateFromBundle(savedInstanceState);
+        if (state == null && getIntent().hasExtra(EXTRA_CATEGORY_ID)) {
+            int categoryId = getIntent().getIntExtra(EXTRA_CATEGORY_ID, -1);
+            presenter.setCategoryId(categoryId);
         }
         presenter.subscribe(this, state);
     }
 
     private void writeStateToBundle(Bundle savedInstanceState) {
-        CategoriesContract.State state = presenter.getState();
-        savedInstanceState.putInt(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID, state.getParentCategoryId());
-        Parcelable categoriesState = Parcels.wrap(state.getCategories());
-        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_CATEGORIES, categoriesState);
-        Parcelable categoriesListState = categoriesListView.getLayoutManager().onSaveInstanceState();
-        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_CATEGORY_LIST_STATE, categoriesListState);
+        ProductsContract.State state = presenter.getState();
+        savedInstanceState.putInt(BUNDLE_ARGUMENT_CATEGORY_ID, state.getCategoryId());
+        Parcelable productsState = Parcels.wrap(state.getProducts());
+        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_PRODUCTS, productsState);
+        Parcelable productsListState = productsListView.getLayoutManager().onSaveInstanceState();
+        savedInstanceState.putParcelable(BUNDLE_ARGUMENT_PRODUCT_LIST_STATE, productsListState);
     }
 
-    private CategoriesContract.State readStateFromBundle(Bundle savedInstanceState) {
+    private ProductsContract.State readStateFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState == null) {
             return null;
         }
 
-        int parentCategoryId = -1;
-        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID)) {
-            parentCategoryId =
-                    Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID));
+        int categoryId = -1;
+        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CATEGORY_ID)) {
+            categoryId =
+                    Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_CATEGORY_ID));
         }
-        List<Category> categories = null;
-        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CATEGORIES)) {
-            categories = Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_CATEGORIES));
+        List<Product> products = null;
+        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PRODUCTS)) {
+            products = Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PRODUCTS));
         }
-        Parcelable categoriesListState = null;
-        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CATEGORY_LIST_STATE)) {
-            categoriesListState = savedInstanceState.getParcelable(BUNDLE_ARGUMENT_CATEGORY_LIST_STATE);
+        Parcelable productsListState = null;
+        if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PRODUCT_LIST_STATE)) {
+            productsListState = savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PRODUCT_LIST_STATE);
         }
-        return new CategoriesState(parentCategoryId, categories,
-                new RecyclerViewState(categoriesListState));
+        return new ProductsState(categoryId, products, new RecyclerViewState(productsListState));
     }
 }

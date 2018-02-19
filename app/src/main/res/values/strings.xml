@@ -4,4 +4,6 @@
     <string name="error_generic">An error occurred</string>
     <string name="error_network_unavailable">Network unavailable</string>
     <string name="action_retry">Retry</string>
+
+    <string name="hifen">-</string>
 </resources>

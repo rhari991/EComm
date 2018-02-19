@@ -2,6 +2,7 @@ package net.rhari.ecomm.categories;
 
 import net.rhari.ecomm.data.model.Category;
 import net.rhari.ecomm.data.repository.CategoryRepository;
+import net.rhari.ecomm.data.repository.ProductRepository;
 import net.rhari.ecomm.di.ActivityScoped;
 import net.rhari.ecomm.util.NetworkHelper;
 
@@ -22,6 +23,7 @@ class CategoriesPresenter implements CategoriesContract.Presenter,
     private static final int NO_PARENT_CATEGORY = -1;
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
     private final NetworkHelper networkHelper;
 
     private CategoriesContract.View view;
@@ -31,8 +33,10 @@ class CategoriesPresenter implements CategoriesContract.Presenter,
     private final CompositeDisposable disposables;
 
     @Inject
-    CategoriesPresenter(CategoryRepository categoryRepository, NetworkHelper networkHelper) {
+    CategoriesPresenter(CategoryRepository categoryRepository, ProductRepository productRepository,
+                        NetworkHelper networkHelper) {
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
         this.networkHelper = networkHelper;
 
         this.parentCategoryId = NO_PARENT_CATEGORY;
@@ -99,8 +103,11 @@ class CategoriesPresenter implements CategoriesContract.Presenter,
                 categoryRepository.getChildCategories(parentCategoryId) :
                 categoryRepository.getTopLevelCategories();
         Disposable disposable = source
-                // TODO : Go to products page
-                //.switchIfEmpty()
+                .doOnNext(categories -> {
+                    if (categories.size() == 0) {
+                        view.goToProductsPage(parentCategoryId);
+                    }
+                })
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(throwable -> view.showErrorMessage(null))
                 .subscribe(this::saveAndShowCategories);
