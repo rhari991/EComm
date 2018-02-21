@@ -6,6 +6,7 @@ import net.rhari.ecomm.data.model.Product;
 import net.rhari.ecomm.data.model.RankingInfo;
 import net.rhari.ecomm.data.model.RankingValue;
 import net.rhari.ecomm.data.model.Tax;
+import net.rhari.ecomm.data.model.Variant;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,9 +41,10 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
             JSONObject rootJson = new JSONObject(value.string());
             List<Category> categories = parseCategories(rootJson);
             List<Product> products = parseProducts(rootJson);
+            List<Variant> variants = parseVariants(rootJson);
             List<RankingInfo> rankingInfo = parseRankingInfo(rootJson);
             List<RankingValue> rankingValues = parseRankingValues(rootJson);
-            return new ApiResponse(categories, products, null, rankingInfo, rankingValues);
+            return new ApiResponse(categories, products, variants, rankingInfo, rankingValues);
         } catch (JSONException je) {
             Timber.e("Could not parse server response", je);
             return null;
@@ -107,6 +109,38 @@ class ApiResponseConverter implements Converter<ResponseBody, ApiResponse> {
         }
 
         return products;
+    }
+
+    private List<Variant> parseVariants(JSONObject rootJson) throws JSONException {
+        List<Variant> variants = new ArrayList<>();
+        JSONArray categoriesJson = rootJson.getJSONArray("categories");
+
+        for (int i = 0;i < categoriesJson.length();i++) {
+            JSONObject categoryJson = categoriesJson.getJSONObject(i);
+            JSONArray productsJson = categoryJson.getJSONArray("products");
+
+            for (int j = 0;j < productsJson.length();j++) {
+                JSONObject productJson = productsJson.getJSONObject(j);
+                int productId = productJson.getInt("id");
+                JSONArray variantsJson = productJson.getJSONArray("variants");
+
+                for (int k = 0;k < variantsJson.length();k++) {
+                    JSONObject variantJson = variantsJson.getJSONObject(k);
+                    int id = variantJson.getInt("id");
+                    String color = variantJson.getString("color");
+                    Integer size = null;
+                    if (!variantJson.opt("size").toString().equals("null")) {
+                        size = variantJson.getInt("size");
+                    }
+                    int price = variantJson.getInt("price");
+
+                    Variant variant = new Variant(id, productId, color, size, price);
+                    variants.add(variant);
+                }
+            }
+        }
+
+        return variants;
     }
 
     private List<RankingInfo> parseRankingInfo(JSONObject rootJson) throws JSONException {

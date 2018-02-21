@@ -4,7 +4,6 @@ import net.rhari.ecomm.data.model.RankingInfo;
 import net.rhari.ecomm.data.model.SortedProduct;
 import net.rhari.ecomm.data.repository.RankingRepository;
 import net.rhari.ecomm.di.ActivityScoped;
-import net.rhari.ecomm.util.NetworkHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +15,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 @ActivityScoped
-class ProductsPresenter implements ProductsContract.Presenter,
-        NetworkHelper.OnNetworkStateChangeListener {
+class ProductsPresenter implements ProductsContract.Presenter {
 
     private final RankingRepository rankingRepository;
 
@@ -68,13 +66,6 @@ class ProductsPresenter implements ProductsContract.Presenter,
     @Override
     public void onRetry() {
         reload();
-    }
-
-    @Override
-    public void onNetworkStateChange(boolean connected) {
-        if (connected) {
-            reload();
-        }
     }
 
     @Override

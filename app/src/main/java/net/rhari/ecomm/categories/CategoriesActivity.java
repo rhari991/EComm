@@ -43,7 +43,7 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
     @BindView(R.id.layout_loading_content)
     LinearLayout loadingContentView;
 
-    @BindView(R.id.list_categories)
+    @BindView(R.id.recyclerview)
     RecyclerView categoriesListView;
 
     @Inject

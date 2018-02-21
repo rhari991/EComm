@@ -23,6 +23,7 @@ import net.rhari.ecomm.data.model.SortedProduct;
 import net.rhari.ecomm.di.ActivityScoped;
 import net.rhari.ecomm.util.ListState;
 import net.rhari.ecomm.util.RecyclerViewState;
+import net.rhari.ecomm.variants.VariantsActivity;
 
 import org.parceler.Parcels;
 
@@ -50,7 +51,7 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     @BindView(R.id.layout_loading_content)
     LinearLayout loadingContentView;
 
-    @BindView(R.id.list_categories)
+    @BindView(R.id.recyclerview)
     RecyclerView productsListView;
 
     @Inject
@@ -112,7 +113,9 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
 
     @Override
     public void goToVariantsPage(int productId) {
-        // TODO
+        Intent intent = new Intent(this, VariantsActivity.class);
+        intent.putExtra(VariantsActivity.EXTRA_PRODUCT_ID, productId);
+        startActivity(intent);
     }
 
     @Override
