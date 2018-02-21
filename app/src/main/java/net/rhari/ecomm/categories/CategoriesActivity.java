@@ -56,11 +56,6 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recycler_list);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
         ButterKnife.bind(this);
         setupToolbar();
         setupCategoryList();
@@ -68,9 +63,9 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
     }
 
     @Override
-    protected void onPause() {
+    protected void onStop() {
         presenter.unsubscribe();
-        super.onPause();
+        super.onStop();
     }
 
     @Override
@@ -197,8 +192,7 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
 
         int parentCategoryId = -1;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID)) {
-            parentCategoryId =
-                    Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID));
+            parentCategoryId = savedInstanceState.getInt(BUNDLE_ARGUMENT_PARENT_CATEGORY_ID);
         }
         List<Category> categories = null;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CATEGORIES)) {

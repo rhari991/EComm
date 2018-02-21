@@ -66,11 +66,6 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recycler_list);
         sortOrderAdapter = new ArrayAdapter<>(this, R.layout.layout_sort_order_row);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
         ButterKnife.bind(this);
         setupToolbar();
         setupProductsList();
@@ -78,9 +73,9 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
     }
 
     @Override
-    protected void onPause() {
+    protected void onStop() {
         presenter.unsubscribe();
-        super.onPause();
+        super.onStop();
     }
 
     @Override
@@ -232,8 +227,7 @@ public class ProductsActivity extends DaggerAppCompatActivity implements Product
 
         int categoryId = -1;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CATEGORY_ID)) {
-            categoryId =
-                    Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_CATEGORY_ID));
+            categoryId = savedInstanceState.getInt(BUNDLE_ARGUMENT_CATEGORY_ID);
         }
         RankingInfo currentSortOrder = null;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_CURRENT_SORT_ORDER)) {

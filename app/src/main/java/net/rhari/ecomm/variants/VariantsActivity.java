@@ -54,6 +54,10 @@ public class VariantsActivity extends DaggerAppCompatActivity implements Variant
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recycler_list);
+        ButterKnife.bind(this);
+        setupToolbar();
+        setupVariantList();
+        subscribeToPresenter(null);
     }
 
     @Override
@@ -66,9 +70,9 @@ public class VariantsActivity extends DaggerAppCompatActivity implements Variant
     }
 
     @Override
-    protected void onPause() {
+    protected void onStop() {
         presenter.unsubscribe();
-        super.onPause();
+        super.onStop();
     }
 
     @Override
@@ -172,8 +176,7 @@ public class VariantsActivity extends DaggerAppCompatActivity implements Variant
 
         int productId = -1;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_PRODUCT_ID)) {
-            productId =
-                    Parcels.unwrap(savedInstanceState.getParcelable(BUNDLE_ARGUMENT_PRODUCT_ID));
+            productId = savedInstanceState.getInt(BUNDLE_ARGUMENT_PRODUCT_ID);
         }
         List<Variant> variants = null;
         if (savedInstanceState.containsKey(BUNDLE_ARGUMENT_VARIANTS)) {
