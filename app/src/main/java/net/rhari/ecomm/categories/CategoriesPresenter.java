@@ -64,7 +64,18 @@ class CategoriesPresenter implements CategoriesContract.Presenter,
 
     @Override
     public void onListItemClick(Category category, int position) {
-        view.goToChildCategoryPage(category.getId());
+        Disposable disposable = categoryRepository.getChildCategories(category.getId())
+                .doOnNext(categories -> {
+                    if (categories.size() == 0) {
+                        view.goToProductsPage(category.getId());
+                    } else {
+                        view.goToChildCategoryPage(category.getId());
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(throwable -> view.showErrorMessage(null))
+                .subscribe();
+        disposables.add(disposable);
     }
 
     @Override

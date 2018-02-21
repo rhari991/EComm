@@ -96,7 +96,6 @@ public class CategoriesActivity extends DaggerAppCompatActivity implements Categ
         Intent intent = new Intent(this, ProductsActivity.class);
         intent.putExtra(ProductsActivity.EXTRA_CATEGORY_ID, categoryId);
         startActivity(intent);
-        finish();
     }
 
     @Override
